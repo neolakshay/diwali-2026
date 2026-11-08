@@ -21,6 +21,11 @@ body {
 }
 
 button { font: inherit; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+.sound-toggle { position: fixed; z-index: 25; top: 1.25rem; left: 1.25rem; min-height: 44px; padding: .65rem .9rem; border: 1px solid rgba(255,255,255,.2); border-radius: 999px; background: rgba(5,5,5,.8); color: rgba(255,239,202,.7); cursor: pointer; font-size: .8rem; }
+.sound-toggle[aria-pressed="true"] { color: var(--warm); border-color: rgba(255,206,110,.35); }
+.sound-toggle:focus-visible { outline: 2px solid var(--warm); outline-offset: 3px; }
+.sound-toggle:disabled { cursor: default; opacity: .5; }
 
 .grain {
   position: fixed;
@@ -59,10 +64,20 @@ button { font: inherit; }
   padding: .48rem .66rem;
   background: transparent;
   color: inherit;
+  min-width: 44px;
+  min-height: 44px;
 }
 
 .language .language__active { background: rgba(255,210,115,.18); color: var(--paper); }
-.language button:disabled { cursor: not-allowed; opacity: .35; }
+.language button { cursor: pointer; }
+.language button[lang="hi"] { font-size: .95rem; letter-spacing: normal; text-transform: none; }
+.language button:focus-visible { outline: 2px solid var(--warm); outline-offset: 2px; }
+
+html:lang(hi) body { font-family: "Noto Serif Devanagari", "Nirmala UI", "Mangal", serif; }
+html:lang(hi) h1 { line-height: 1.4; letter-spacing: normal; }
+html:lang(hi) .eyebrow { font-size: .8rem; line-height: 1.7; letter-spacing: .04em; }
+html:lang(hi) .entry-hint { letter-spacing: .04em; font-size: .9rem; }
+html:lang(hi) .ritual-copy p:not(.eyebrow) { line-height: 1.8; }
 
 .screen {
   position: absolute;
@@ -149,65 +164,97 @@ h1 { margin: 0; font-size: clamp(2.35rem, 7vw, 5.6rem); font-weight: 400; line-h
 .choice-card:hover, .choice-card:focus-visible { border-color: rgba(255,190,69,.82); background: rgba(255,176,42,.1); outline: 0; transform: translateY(-5px); }
 .choice-card__symbol { color: var(--warm); font-size: 1.5rem; }
 
-.screen--ritual { overflow: hidden; align-content: center; grid-template-rows: auto minmax(22rem, 56vh); gap: 1rem; padding: 5rem 1.5rem 2rem; }
-.ritual-copy { position: relative; z-index: 8; text-align: center; }
+.screen--ritual { overflow: hidden; padding: 0; }
+.ritual-copy { position: absolute; z-index: 8; top: clamp(6.2rem, 16vh, 10rem); left: 1rem; right: 1rem; text-align: center; pointer-events: none; }
 .ritual-copy .eyebrow { margin-bottom: .45rem; }
 .ritual-copy p:not(.eyebrow) { margin: 0; color: rgba(255,249,223,.58); font-size: .95rem; }
+.ritual-invitation { margin: 1.5rem auto 0; max-width: 30rem; animation: invitation-in .85s ease both; }
+.ritual-invitation[hidden], .ritual-invitation__action[hidden] { display: none; }
+.ritual-copy .ritual-invitation p { color: rgba(255,239,202,.85); font-size: clamp(1.05rem, 2.4vw, 1.3rem); line-height: 1.6; }
+.ritual-invitation__action { margin-top: 1.2rem; min-height: 44px; padding: .75rem 1.4rem; border: 1px solid rgba(255,206,110,.45); border-radius: 999px; background: rgba(255,177,49,.08); color: var(--warm); cursor: pointer; pointer-events: auto; transition: background .25s ease, border-color .25s ease; }
+.ritual-invitation__action:hover, .ritual-invitation__action:focus-visible { border-color: var(--warm); background: rgba(255,177,49,.18); outline: 2px solid rgba(255,206,110,.55); outline-offset: 4px; }
+[hidden] { display: none !important; }
+.ritual-copy .aarti-invitation__copy { margin-top: 1.3rem; color: rgba(255,249,223,.62); font-size: 1rem; }
+.aarti-invitation__actions { display: flex; justify-content: center; align-items: center; gap: .5rem 1rem; flex-wrap: wrap; margin-top: 1rem; }
+.aarti-invitation__actions .ritual-invitation__action { margin-top: 0; }
+.quiet-action { min-height: 44px; padding: .65rem .75rem; border: 0; border-radius: .4rem; background: transparent; color: rgba(255,239,202,.7); cursor: pointer; pointer-events: auto; }
+.quiet-action:hover { color: var(--warm); }
+.quiet-action:focus-visible { outline: 2px solid var(--warm); outline-offset: 3px; }
+
+.screen--aarti { overflow-y: auto; display: block; padding: 5.5rem 1.25rem 2rem; background: radial-gradient(ellipse at 50% 36%, rgba(255,154,35,.07), transparent 65%); }
+.aarti-content { width: min(100%, 42rem); margin: 0 auto; text-align: center; }
+.aarti-symbol { display: block; margin-bottom: 1rem; color: var(--warm); font-size: 2.8rem; text-shadow: 0 0 2rem rgba(255,170,44,.45); }
+.aarti-heading h1 { font-size: clamp(2rem, 6vw, 3.6rem); line-height: 1.1; }
+.aarti-subtitle { margin: 1rem 0 1.5rem; color: rgba(255,249,223,.6); line-height: 1.5; }
+.aarti-languages { display: inline-flex; gap: .2rem; padding: .25rem; border: 1px solid rgba(255,206,110,.2); border-radius: 999px; }
+.aarti-languages button { min-height: 44px; padding: .5rem 1rem; border: 0; border-radius: 999px; background: transparent; color: rgba(255,239,202,.6); cursor: pointer; }
+.aarti-languages button[aria-pressed="true"] { color: var(--warm); background: rgba(255,177,49,.13); }
+.aarti-languages button:focus-visible { outline: 2px solid var(--warm); outline-offset: 2px; }
+.aarti-lyrics { min-height: 13rem; display: flex; flex-direction: column; justify-content: center; gap: 1.2rem; padding: 1.75rem 0; }
+.aarti-lyrics p { margin: 0; overflow-wrap: anywhere; }
+.aarti-lyrics__current { color: var(--paper); font-size: clamp(1.45rem, 4.4vw, 2.2rem); line-height: 1.6; text-shadow: 0 0 1.5rem rgba(255,177,49,.16); }
+.aarti-lyrics__next { min-height: 1.7em; color: rgba(255,239,202,.42); font-size: clamp(1rem, 2.5vw, 1.2rem); line-height: 1.7; }
+.aarti-player audio { display: block; width: min(100%, 30rem); margin: 0 auto; }
+.aarti-status { min-height: 2.7em; margin: 1rem 0 .5rem; color: rgba(255,239,202,.75); font-size: .95rem; line-height: 1.4; }
+.aarti-script-note { color: rgba(255,239,202,.45); font-size: .8rem; line-height: 1.5; }
+.aarti-player__actions { display: flex; justify-content: center; flex-wrap: wrap; gap: .5rem 1rem; margin-top: .75rem; }
 
 .ritual-progress { position: absolute; z-index: 9; top: clamp(5.5rem, 11vh, 8.2rem); left: 50%; display: flex; gap: .5rem; transform: translateX(-50%); }
 .ritual-progress span { width: .47rem; height: .47rem; border: 1px solid rgba(255,211,117,.5); border-radius: 50%; transition: background .35s ease, box-shadow .35s ease, transform .35s ease; }
 .ritual-progress span.is-filled { background: var(--warm); box-shadow: 0 0 12px 2px rgba(255,174,33,.72); transform: scale(1.14); }
 
-.ritual-scene { position: relative; width: min(82vw, 45rem); height: min(50vh, 30rem); min-height: 22rem; }
+.ritual-scene { position: absolute; inset: 0; width: 100%; height: 100%; --ground: max(1.25rem, env(safe-area-inset-bottom)); }
 .diya, .skyshot { position: absolute; inset: 0; opacity: 0; transform: translateY(1rem) scale(.96); pointer-events: none; transition: opacity .65s ease, transform .65s ease; }
 .ritual-scene[data-kind="diya"] .diya, .ritual-scene[data-kind="skyshot"] .skyshot { opacity: 1; transform: translateY(0) scale(1); }
 
 .diya { display: grid; place-items: center; }
-.diya__halo { position: absolute; width: 22rem; max-width: 68vw; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, rgba(255,177,47,.13), transparent 62%); opacity: .28; transition: opacity .8s ease, transform .8s ease; }
-.diya__bowl { position: absolute; top: 52%; width: 14rem; height: 6.8rem; border-radius: 12% 12% 46% 46% / 12% 12% 76% 76%; background: linear-gradient(155deg, #d35b22, #8c2f14 68%, #421306); box-shadow: inset 0 .25rem .45rem rgba(255,226,145,.34), inset 0 -1rem 1rem rgba(45,5,0,.55), 0 1rem 2rem rgba(0,0,0,.55); }
-.diya__rim { position: absolute; top: calc(52% - .9rem); width: 13.5rem; height: 2.35rem; border-radius: 50%; background: radial-gradient(ellipse at center, #301005 0 38%, #f09b3f 40% 48%, #8b2e12 51% 100%); z-index: 2; }
-.diya__wick { position: absolute; z-index: 4; top: calc(52% - 3.9rem); width: 3.9rem; height: 5.4rem; border-radius: 50% 50% 38% 38%; cursor: crosshair; }
-.diya__wick::before { content: ""; position: absolute; z-index: -1; bottom: 1.8rem; left: 50%; width: .8rem; height: .8rem; border-radius: 50%; background: #ffbe44; opacity: 0; box-shadow: 0 0 .8rem .28rem rgba(255,142,26,.7); transform: translateX(-50%) scale(.3); transition: opacity .35s ease, transform .35s ease; }
-.diya__wick::after { content: ""; position: absolute; bottom: .6rem; left: 50%; width: .32rem; height: 2.4rem; border-radius: 999px; background: #2b140b; transform: translateX(-50%) rotate(13deg); }
+.diya__halo { position: absolute; bottom: calc(var(--ground) - 2rem); width: 22rem; max-width: 68vw; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, rgba(255,177,47,.13), transparent 62%); opacity: .28; transition: opacity .8s ease, transform .8s ease; }
+.diya__bowl { position: absolute; bottom: var(--ground); width: 14rem; height: 6.8rem; border-radius: 12% 12% 46% 46% / 12% 12% 76% 76%; background: linear-gradient(155deg, #d35b22, #8c2f14 68%, #421306); box-shadow: inset 0 .25rem .45rem rgba(255,226,145,.34), inset 0 -1rem 1rem rgba(45,5,0,.55), 0 1rem 2rem rgba(0,0,0,.55); }
+.diya__rim { position: absolute; bottom: calc(var(--ground) + 5.35rem); width: 13.5rem; height: 2.35rem; border-radius: 50%; background: radial-gradient(ellipse at center, #301005 0 38%, #f09b3f 40% 48%, #8b2e12 51% 100%); z-index: 2; }
+.diya__wick { position: absolute; z-index: 4; bottom: calc(var(--ground) + 6.05rem); width: 4rem; height: 4rem; border: 1px dashed rgba(255,206,110,.38); border-radius: 50%; background: radial-gradient(circle, rgba(255,171,58,.13), transparent 70%); transition: background .25s ease, border-color .25s ease; }
+.diya__wick::before { content: ""; position: absolute; bottom: calc(50% - .4rem); left: 50%; width: .8rem; height: .8rem; border-radius: 50%; background: #ffbe44; opacity: .35; box-shadow: 0 0 .8rem .28rem rgba(255,142,26,.7); transform: translateX(-50%) scale(.65); transition: opacity .35s ease, transform .35s ease; }
+.diya__wick::after { content: ""; position: absolute; bottom: .5rem; left: 50%; width: .32rem; height: 1.5rem; border-radius: 999px; background: #2b140b; transform: translateX(-50%); }
 .diya__flame { position: absolute; bottom: 1.75rem; left: 50%; width: 3rem; height: 4.6rem; border-radius: 62% 38% 60% 40% / 72% 46% 54% 28%; background: radial-gradient(ellipse at 50% 75%, #fff8a2 0 12%, #ffc54f 15% 42%, #ff7b19 62%, transparent 65%); opacity: 0; transform: translate(-50%, .75rem) scale(.45); filter: drop-shadow(0 0 1rem rgba(255,174,33,.8)); transition: opacity .7s ease, transform .7s cubic-bezier(.16,1,.3,1); }
 .ritual-scene.is-complete .diya__flame { opacity: 1; transform: translate(-50%, 0) scale(1); animation: flicker 1.6s ease-in-out infinite; }
 .ritual-scene.is-complete .diya__halo { opacity: 1; transform: scale(1.2); }
+.ritual-scene.is-complete .diya__wick { border-color: transparent; background: transparent; }
+.ritual-scene.is-complete .diya__wick::before { opacity: 0; }
 .ritual-scene[data-progress="1"] .diya__wick::before { opacity: .45; transform: translateX(-50%) scale(.65); }.ritual-scene[data-progress="2"] .diya__wick::before { opacity: .8; transform: translateX(-50%) scale(1); }
 
 .skyshot { display: grid; place-items: center; }
-.skyshot__base { position: absolute; top: 66%; width: 17rem; height: 1.5rem; border: 1px solid rgba(255,207,110,.36); border-radius: 50%; background: linear-gradient(180deg,#48301b,#17100b); box-shadow: 0 .7rem 1.6rem rgba(0,0,0,.6); }
-.skyshot__cylinders { position: absolute; top: 37%; display: flex; align-items: end; gap: .55rem; }
+.skyshot__base { position: absolute; bottom: var(--ground); width: 17rem; height: 1.5rem; border: 1px solid rgba(255,207,110,.36); border-radius: 50%; background: linear-gradient(180deg,#48301b,#17100b); box-shadow: 0 .7rem 1.6rem rgba(0,0,0,.6); }
+.skyshot__cylinders { position: absolute; bottom: calc(var(--ground) + .5rem); display: flex; align-items: end; gap: .55rem; }
 .skyshot__cylinder { position: relative; width: 3.5rem; height: 9rem; overflow: hidden; border: 2px solid #f7a942; border-radius: .7rem .7rem .45rem .45rem; background: repeating-linear-gradient(135deg,#7f2a26 0 9px,#f1a13f 10px 17px,#45204a 18px 25px); box-shadow: inset .35rem 0 rgba(255,245,196,.18), .35rem .6rem 0 rgba(0,0,0,.23); }
 .skyshot__cylinder::before { content: ""; position: absolute; inset: .22rem .22rem auto; height: .72rem; border-radius: 50%; background: #23130f; box-shadow: inset 0 0 .25rem #f9c455; }
 .skyshot__cylinder b { position: absolute; left: -.2rem; width: calc(100% + .4rem); height: .18rem; background: #f6c969; opacity: .75; }
 .skyshot__cylinder b:first-child { top: 33%; }.skyshot__cylinder b:last-child { top: 70%; }
 .skyshot__cylinder--one { height: 7.2rem; transform: rotate(-6deg); }.skyshot__cylinder--three { height: 7.8rem; transform: rotate(6deg); }
-.skyshot__fuse { position: absolute; z-index: 4; top: 31%; left: calc(50% + 2.6rem); width: 5rem; height: 5rem; cursor: crosshair; }
-.skyshot__fuse::before { content: ""; position: absolute; top: 2.5rem; left: -.25rem; width: 2.5rem; height: .23rem; border-radius: 999px; background: #b88c53; transform: rotate(-40deg); transform-origin: left; }
-.skyshot__fuse span { position: absolute; top: 1.55rem; right: .7rem; width: .9rem; height: .9rem; border-radius: 50%; background: #f2ba50; opacity: .2; box-shadow: 0 0 0 .45rem rgba(255,182,44,.05); transition: opacity .3s ease, box-shadow .3s ease; }
-.ritual-scene.is-near-target .skyshot__fuse span, .ritual-scene.is-complete .skyshot__fuse span { opacity: 1; box-shadow: 0 0 1.4rem .3rem rgba(255,154,27,.7); }
-.ritual-scene[data-progress="1"] .skyshot__fuse span { opacity: .55; box-shadow: 0 0 .7rem .1rem rgba(255,154,27,.45); }.ritual-scene[data-progress="2"] .skyshot__fuse span { opacity: .85; box-shadow: 0 0 1.05rem .2rem rgba(255,154,27,.64); }
-.skyshot__burst { position: absolute; top: 2%; left: 50%; width: 1rem; height: 1rem; transform: translateX(-50%) scale(.15); opacity: 0; transition: opacity .25s ease, transform .95s cubic-bezier(.16,1,.3,1); }
-.skyshot__burst::before { content: ""; position: absolute; inset: 0; border-radius: 50%; background: #fff3a1; box-shadow: 0 0 1.3rem .6rem #ff9d29; }
-.skyshot__burst i { position: absolute; top: .35rem; left: .45rem; width: .15rem; height: 7rem; border-radius: 999px; background: linear-gradient(#fff5a0, #ff9a21 55%, transparent); transform-origin: 50% 0; }
-.skyshot__burst i:nth-child(1) { transform: rotate(0deg); }.skyshot__burst i:nth-child(2) { transform: rotate(45deg); }.skyshot__burst i:nth-child(3) { transform: rotate(90deg); }.skyshot__burst i:nth-child(4) { transform: rotate(135deg); }.skyshot__burst i:nth-child(5) { transform: rotate(180deg); }.skyshot__burst i:nth-child(6) { transform: rotate(225deg); }.skyshot__burst i:nth-child(7) { transform: rotate(270deg); }.skyshot__burst i:nth-child(8) { transform: rotate(315deg); }
-.ritual-scene.is-complete .skyshot__burst { opacity: 1; transform: translateX(-50%) scale(1); }
+.skyshot__fuse { position: absolute; z-index: 4; bottom: calc(var(--ground) + 7.5rem); left: calc(50% - 2rem); width: 4rem; height: 4rem; border: 1px dashed rgba(255,206,110,.38); border-radius: 50%; background: radial-gradient(circle, rgba(255,171,58,.13), transparent 70%); transition: background .25s ease, border-color .25s ease; }
+.skyshot__fuse::before { content: ""; position: absolute; left: calc(50% - .12rem); top: 50%; width: .24rem; height: 1.5rem; border-radius: 999px; background: #bd955d; }
+.skyshot__fuse span { position: absolute; top: calc(50% - .3rem); left: calc(50% - .3rem); width: .6rem; height: .6rem; border-radius: 50%; background: #ffe9ae; box-shadow: 0 0 .8rem .2rem rgba(255,164,44,.8); }
+.ritual-scene.is-near-target .skyshot__fuse { border-color: #ffdf93; background: rgba(255,177,49,.22); box-shadow: 0 0 1.5rem rgba(255,154,27,.3); }
+.ritual-scene[data-progress="1"] .skyshot__fuse span { box-shadow: 0 0 1rem .3rem rgba(255,154,27,.8); }
+.ritual-scene[data-progress="2"] .skyshot__fuse span { box-shadow: 0 0 1.4rem .4rem rgba(255,154,27,.9); }
+.ritual-scene.is-complete .skyshot__fuse { opacity: 0; transition: opacity .4s ease; }
+.skyshot__fireworks { position: absolute; z-index: 6; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 
 .orb-field { position: absolute; inset: 0; z-index: 7; pointer-events: none; }
 .orb { position: absolute; width: var(--size); height: var(--size); border: 0; border-radius: 50%; padding: 0; background: radial-gradient(circle at 36% 30%, #fffde4 0 8%, #ffdc70 19%, #ff9c23 56%, #f35e13 100%); box-shadow: 0 0 11px 3px rgba(255,196,68,.88), 0 0 28px 8px rgba(255,111,18,.42); cursor: grab; pointer-events: auto; touch-action: none; transform: translate(-50%, -50%); animation: drift var(--duration) ease-in-out var(--delay) infinite alternate; }
-.orb.is-dragging { z-index: 15; cursor: grabbing; animation-play-state: paused; filter: brightness(1.2); transform: translate(-50%, -50%) scale(1.35); }
+.orb::before { content: ""; position: absolute; width: 44px; height: 44px; top: 50%; left: 50%; transform: translate(-50%, -50%); border-radius: 50%; }
+.orb.is-dragging { z-index: 15; cursor: grabbing; animation: none; margin: 0; filter: brightness(1.2); transform: translate(-50%, -50%) scale(1.35); }
 .orb.is-used { pointer-events: none; animation: none; transition: opacity .45s ease, transform .45s ease; opacity: 0; transform: translate(-50%, -50%) scale(.2); }
 .ritual-scene.is-complete .orb:not(.is-used) { opacity: 0; pointer-events: none; transition: opacity .7s ease; }
-.ritual-scene.is-near-target .diya__wick { filter: drop-shadow(0 0 .7rem rgba(255,194,58,.9)); }
+.ritual-scene.is-near-target .diya__wick { border-color: #ffdf93; background: rgba(255,177,49,.22); filter: drop-shadow(0 0 .7rem rgba(255,194,58,.9)); }
 
 @keyframes aura { 0%,100% { transform: scale(.72); opacity:.3; } 50% { transform: scale(1.2); opacity:1; } }
 @keyframes breathe { 0%,100% { transform: scale(.78); opacity:.82; } 50% { transform: scale(1.52); opacity:1; } }
 @keyframes drift { from { margin: -9px 0 0 -5px; } to { margin: 12px 0 0 8px; } }
 @keyframes flicker { 0%,100% { rotate: -2deg; scale: .96 1; } 50% { rotate: 3deg; scale: 1.06 .93; } }
+@keyframes invitation-in { from { opacity: 0; transform: translateY(.6rem); } to { opacity: 1; transform: translateY(0); } }
 
 @media (max-width: 38rem) {
   .choice-grid { grid-template-columns: 1fr; }.choice-card { min-height: 8.5rem; }.screen--choice { overflow-y: auto; padding: 5rem 0 2rem; }
-  .screen--ritual { grid-template-rows: auto minmax(20rem, 58vh); }.ritual-scene { width: 95vw; }.diya__bowl { width: 11.7rem; }.diya__rim { width: 11.2rem; }.skyshot__cylinder { width: 2.8rem; }
+  .ritual-copy { top: 17vh; }.diya__bowl { width: 11.7rem; }.diya__rim { width: 11.2rem; }.skyshot__cylinder { width: 2.8rem; }
 }
 
 @media (prefers-reduced-motion: reduce) { *,*::before,*::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; } }

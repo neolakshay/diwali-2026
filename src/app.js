@@ -1,4 +1,12 @@
 import { applyDrop, createRitual } from './ritual-state.js';
+import { pointInField } from './ritual-geometry.js';
+import { playFireworks } from './fireworks.js';
+import { createAartiPlayer } from './aarti-player.js';
+import { createI18n } from './i18n.js';
+import { createSoundscape } from './soundscape.js';
+
+const i18n = createI18n();
+const sounds = createSoundscape(document, i18n);
 
 const screens = new Map(
   [...document.querySelectorAll('[data-screen]')].map((screen) => [screen.dataset.screen, screen]),
@@ -12,6 +20,13 @@ const ritualLabel = document.querySelector('#ritual-label');
 const ritualInstruction = document.querySelector('#ritual-instruction');
 const ritualProgress = document.querySelector('#ritual-progress');
 const orbField = document.querySelector('#orb-field');
+const ritualInvitation = document.querySelector('#ritual-invitation');
+const ritualQuote = document.querySelector('#ritual-quote');
+const otherRitualButton = document.querySelector('#other-ritual');
+const aartiInvitation = document.querySelector('#aarti-invitation');
+const beginAartiButton = document.querySelector('#begin-aarti');
+const skipAartiButton = document.querySelector('#skip-aarti');
+const closeAartiButton = document.querySelector('#close-aarti');
 
 const ORB_COUNT = 10;
 const SUCCESSFUL_DROPS = 3;
@@ -19,13 +34,52 @@ const SUCCESSFUL_DROPS = 3;
 let transitioning = false;
 let ritual = null;
 let activeDrag = null;
+const completedKinds = new Set();
+let invitationTimer;
+let stopFireworks;
+let aartiPlayer;
 
-window.setTimeout(() => entryHint.classList.add('is-visible'), 7000);
+i18n.subscribe(renderRitualText);
+renderRitualText();
 
-entryOrb.addEventListener('click', () => switchScreen('choice'));
+window.setTimeout(() => entryHint.classList.add('is-visible'), 3500);
+
+entryOrb.addEventListener('click', () => {
+  sounds.unlock();
+  sounds.setScene('choice');
+  switchScreen('choice');
+});
 choiceButtons.forEach((button) => {
   button.addEventListener('click', () => beginRitual(button.dataset.choice));
 });
+otherRitualButton.addEventListener('click', () => {
+  if (!ritualInvitation.hidden && !otherRitualButton.hidden) beginRitual(otherRitualButton.dataset.kind);
+});
+beginAartiButton.addEventListener('click', () => {
+  if (transitioning || completedKinds.size !== 2 || aartiInvitation.hidden) return;
+  sounds.setScene('aarti');
+  aartiPlayer ??= createAartiPlayer(document, i18n);
+  // Keep play() in the click handler: mobile browsers require this user gesture.
+  aartiPlayer.play();
+  switchScreen('aarti', () => document.querySelector('#aarti-title').focus({ preventScroll: true }));
+});
+skipAartiButton.addEventListener('click', () => {
+  if (completedKinds.size !== 2 || aartiInvitation.hidden) return;
+  aartiInvitation.hidden = true;
+  sounds.setScene('quiet');
+  focusClosingWish();
+});
+closeAartiButton.addEventListener('click', () => {
+  if (transitioning) return;
+  aartiPlayer?.pause();
+  sounds.setScene('quiet');
+  switchScreen('ritual', focusClosingWish);
+});
+
+function focusClosingWish() {
+  ritualQuote.setAttribute('tabindex', '-1');
+  ritualQuote.focus({ preventScroll: true });
+}
 
 function switchScreen(nextName, onShown = () => {}) {
   if (transitioning) return;
@@ -35,6 +89,7 @@ function switchScreen(nextName, onShown = () => {}) {
   if (!next || current === next) return;
 
   transitioning = true;
+  current.inert = true;
   current.classList.add('is-leaving');
 
   window.setTimeout(() => {
@@ -42,6 +97,7 @@ function switchScreen(nextName, onShown = () => {}) {
     current.setAttribute('aria-hidden', 'true');
     next.classList.add('is-visible');
     next.setAttribute('aria-hidden', 'false');
+    next.inert = false;
     onShown();
     window.setTimeout(() => {
       transitioning = false;
@@ -50,18 +106,31 @@ function switchScreen(nextName, onShown = () => {}) {
 }
 
 function beginRitual(kind) {
-  if (transitioning || ritual) return;
+  if (transitioning || (ritual && (ritual.status !== 'complete' || completedKinds.has(kind)))) return;
+
+  sounds.unlock();
+  sounds.setScene(kind);
+  window.clearTimeout(invitationTimer);
+  stopFireworks?.();
+  stopFireworks = null;
+  ritualInvitation.hidden = true;
+  otherRitualButton.hidden = true;
+  aartiInvitation.hidden = true;
 
   ritual = createRitual(kind);
   ritualScene.dataset.kind = kind;
   ritualScene.dataset.progress = '0';
   ritualScene.classList.remove('is-complete', 'is-near-target');
-  ritualLabel.textContent = kind === 'diya' ? 'Bring light to the wick' : 'Wake the skyshot';
-  ritualInstruction.textContent = 'Drag three wandering lights to begin.';
-  updateProgress();
+  renderRitualText();
   orbField.replaceChildren();
 
-  switchScreen('ritual', createOrbs);
+  const prepareScene = () => {
+    createOrbs();
+    ritualLabel.setAttribute('tabindex', '-1');
+    ritualLabel.focus({ preventScroll: true });
+  };
+  if (screens.get('ritual').classList.contains('is-visible')) prepareScene();
+  else switchScreen('ritual', prepareScene);
 }
 
 function createOrbs() {
@@ -70,11 +139,11 @@ function createOrbs() {
   for (let index = 0; index < ORB_COUNT; index += 1) {
     const orb = document.createElement('button');
     const left = 10 + Math.random() * 80;
-    const top = 14 + Math.random() * 72;
+    const top = 30 + Math.random() * 38;
 
     orb.type = 'button';
     orb.className = 'orb';
-    orb.ariaLabel = 'Drag this wandering light to the ignition point';
+    orb.ariaLabel = i18n.t('orbLabel');
     orb.dataset.homeX = left.toFixed(2);
     orb.dataset.homeY = top.toFixed(2);
     orb.style.left = `${orb.dataset.homeX}%`;
@@ -87,6 +156,7 @@ function createOrbs() {
     orb.addEventListener('pointermove', onPointerMove);
     orb.addEventListener('pointerup', onPointerUp);
     orb.addEventListener('pointercancel', cancelDrag);
+    orb.addEventListener('lostpointercapture', cancelDrag);
     fragment.append(orb);
   }
 
@@ -94,9 +164,10 @@ function createOrbs() {
 }
 
 function onPointerDown(event) {
-  if (!ritual || ritual.status === 'complete' || activeDrag || event.currentTarget.classList.contains('is-used')) return;
+  if (!ritual || ritual.status === 'complete' || activeDrag || event.button !== 0 || event.currentTarget.classList.contains('is-used')) return;
 
   event.preventDefault();
+  sounds.unlock();
   const orb = event.currentTarget;
   activeDrag = { orb, pointerId: event.pointerId };
   orb.setPointerCapture(event.pointerId);
@@ -119,8 +190,8 @@ function onPointerUp(event) {
   const result = applyDrop(ritual, hitTarget);
 
   ritualScene.classList.remove('is-near-target');
-  orb.releasePointerCapture(event.pointerId);
   activeDrag = null;
+  if (orb.hasPointerCapture(event.pointerId)) orb.releasePointerCapture(event.pointerId);
 
   if (!result.accepted) {
     returnOrbToDrift(orb);
@@ -138,15 +209,15 @@ function cancelDrag(event) {
   if (!activeDrag || activeDrag.pointerId !== event.pointerId || activeDrag.orb !== event.currentTarget) return;
 
   ritualScene.classList.remove('is-near-target');
-  activeDrag.orb.releasePointerCapture(event.pointerId);
-  returnOrbToDrift(activeDrag.orb);
+  const orb = activeDrag.orb;
   activeDrag = null;
+  if (orb.hasPointerCapture(event.pointerId)) orb.releasePointerCapture(event.pointerId);
+  returnOrbToDrift(orb);
 }
 
 function placeOrb(orb, event) {
   const fieldBounds = orbField.getBoundingClientRect();
-  const x = clamp(event.clientX - fieldBounds.left, 0, fieldBounds.width);
-  const y = clamp(event.clientY - fieldBounds.top, 0, fieldBounds.height);
+  const { x, y } = pointInField(event, fieldBounds, orbField.clientWidth, orbField.clientHeight);
 
   orb.style.left = `${x}px`;
   orb.style.top = `${y}px`;
@@ -157,7 +228,7 @@ function isNearTarget(event) {
   const targetBounds = target.getBoundingClientRect();
   const targetX = targetBounds.left + targetBounds.width / 2;
   const targetY = targetBounds.top + targetBounds.height / 2;
-  const radius = Math.max(46, Math.max(targetBounds.width, targetBounds.height) * .55);
+  const radius = Math.max(76, Math.max(targetBounds.width, targetBounds.height) * .9);
 
   return Math.hypot(event.clientX - targetX, event.clientY - targetY) <= radius;
 }
@@ -173,28 +244,69 @@ function absorbOrb(orb) {
   const targetBounds = target.getBoundingClientRect();
   const fieldBounds = orbField.getBoundingClientRect();
 
-  orb.style.left = `${targetBounds.left + targetBounds.width / 2 - fieldBounds.left}px`;
-  orb.style.top = `${targetBounds.top + targetBounds.height / 2 - fieldBounds.top}px`;
+  const { x, y } = pointInField({
+    clientX: targetBounds.left + targetBounds.width / 2,
+    clientY: targetBounds.top + targetBounds.height / 2,
+  }, fieldBounds, orbField.clientWidth, orbField.clientHeight);
+  orb.style.left = `${x}px`;
+  orb.style.top = `${y}px`;
   orb.classList.remove('is-dragging');
   orb.classList.add('is-used');
 }
 
 function updateProgress() {
   ritualScene.dataset.progress = String(ritual.successfulDrops);
-  ritualProgress.setAttribute('aria-label', `Light gathered: ${ritual.successfulDrops} of ${SUCCESSFUL_DROPS}`);
+  ritualProgress.setAttribute('aria-label', i18n.t('progress', { count: ritual.successfulDrops, total: SUCCESSFUL_DROPS }));
   [...ritualProgress.children].forEach((dot, index) => {
     dot.classList.toggle('is-filled', index < ritual.successfulDrops);
   });
 }
 
 function completeRitual() {
+  completedKinds.add(ritual.kind);
   ritualScene.classList.add('is-complete');
-  ritualInstruction.textContent = ritual.kind === 'diya'
-    ? 'Your diya is glowing.'
-    : 'The sky answers in light.';
-  ritualStage.setAttribute('aria-label', ritual.kind === 'diya' ? 'A diya is lit' : 'A skyshot has burst');
+  renderRitualText();
+  if (ritual.kind === 'skyshot') {
+    stopFireworks = playFireworks(
+      document.querySelector('#skyshot-fireworks'),
+      document.querySelectorAll('.skyshot__cylinder'),
+      revealInvitation,
+      { onLaunch: sounds.launch, onBurst: sounds.burst },
+    );
+  } else {
+    sounds.lightDiya();
+    const delay = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 1200;
+    invitationTimer = window.setTimeout(revealInvitation, delay);
+  }
 }
 
-function clamp(value, minimum, maximum) {
-  return Math.min(Math.max(value, minimum), maximum);
+function revealInvitation() {
+  if (completedKinds.size === 2) {
+    otherRitualButton.hidden = true;
+    aartiInvitation.hidden = false;
+  } else {
+    const nextKind = ritual.kind === 'diya' ? 'skyshot' : 'diya';
+    otherRitualButton.dataset.kind = nextKind;
+    otherRitualButton.hidden = false;
+  }
+  ritualInvitation.hidden = false;
+  renderRitualText();
+}
+
+function renderRitualText() {
+  if (!ritual) {
+    ritualProgress.setAttribute('aria-label', i18n.t('progress', { count: 0, total: SUCCESSFUL_DROPS }));
+    return;
+  }
+  const { kind, status } = ritual;
+  const complete = status === 'complete';
+  ritualStage.setAttribute('aria-label', i18n.t(`${kind}${complete ? 'CompleteStage' : 'Stage'}`));
+  ritualLabel.textContent = i18n.t(`${kind}Label`);
+  ritualInstruction.textContent = i18n.t(`${kind}${complete ? 'Complete' : 'Instruction'}`);
+  updateProgress();
+  [...orbField.children].forEach((orb) => { orb.ariaLabel = i18n.t('orbLabel'); });
+  if (complete) {
+    ritualQuote.textContent = i18n.t(completedKinds.size === 2 ? 'closingWish' : `${kind}Invitation`);
+    otherRitualButton.textContent = i18n.t(kind === 'diya' ? 'experienceFireworks' : 'lightDiya');
+  }
 }

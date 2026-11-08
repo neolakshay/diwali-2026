@@ -9,71 +9,113 @@
   </head>
   <body>
     <div class="grain" aria-hidden="true"></div>
-    <nav class="language" aria-label="Language">
-      <button class="language__active" type="button" aria-pressed="true">EN</button>
-      <button type="button" disabled aria-label="Hindi language support is coming soon">हि</button>
+    <button id="sound-toggle" class="sound-toggle" type="button" aria-pressed="true" aria-label="Mute ambient sounds and effects" aria-describedby="sound-description">Effects on</button>
+    <span id="sound-description" class="visually-hidden" data-i18n="soundScope">Ambient sounds and effects only. The aarti has its own audio controls.</span>
+    <nav class="language" aria-label="Language" data-i18n-aria="language">
+      <button class="language__active" type="button" data-language="en" lang="en" aria-label="Switch to English" data-i18n-aria="chooseEnglish" aria-pressed="true">EN</button>
+      <button type="button" data-language="hi" lang="hi" aria-label="Switch to Hindi" data-i18n-aria="chooseHindi" aria-pressed="false">हिन्दी</button>
     </nav>
 
     <main id="experience">
-      <section class="screen screen--entry is-visible" data-screen="entry" aria-label="A beginning">
+      <section class="screen screen--entry is-visible" data-screen="entry" aria-label="A beginning" data-i18n-aria="beginning">
         <div class="entry-light" aria-hidden="true"></div>
         <div class="entry-action">
-          <button id="entry-orb" class="entry-orb" type="button" aria-label="Begin your Diwali greeting"></button>
-          <p id="entry-hint" class="entry-hint">Click here</p>
+          <button id="entry-orb" class="entry-orb" type="button" aria-label="Begin your Diwali greeting" data-i18n-aria="beginGreeting"></button>
+          <p id="entry-hint" class="entry-hint" data-i18n="entryHint">Click here</p>
         </div>
       </section>
 
-      <section class="screen screen--choice" data-screen="choice" aria-label="Choose your Diwali ritual" aria-hidden="true">
+      <section class="screen screen--choice" data-screen="choice" aria-label="Choose your Diwali ritual" data-i18n-aria="chooseRitual" aria-hidden="true" inert>
         <div class="choice-copy">
-          <p class="eyebrow">This Diwali, what will you choose?</p>
-          <h1>Let joy take a form.</h1>
-          <p>Some celebrations glow quietly. Others arrive in a burst.</p>
+          <p class="eyebrow" data-i18n="choiceEyebrow">This Diwali, what will you choose?</p>
+          <h1 data-i18n="choiceTitle">Let joy take a form.</h1>
+          <p data-i18n="choiceSubtitle">Some celebrations glow quietly. Others arrive in a burst.</p>
           <div class="choice-grid">
             <button class="choice-card" type="button" data-choice="diya">
               <span class="choice-card__symbol" aria-hidden="true">✦</span>
-              <span>Light a diya</span>
+              <span data-i18n="lightDiya">Light a diya</span>
             </button>
             <button class="choice-card" type="button" data-choice="skyshot">
               <span class="choice-card__symbol" aria-hidden="true">✺</span>
-              <span>Burst crackers</span>
+              <span data-i18n="burstCrackers">Burst crackers</span>
             </button>
           </div>
         </div>
       </section>
 
-      <section id="ritual-stage" class="screen screen--ritual" data-screen="ritual" aria-live="polite" aria-hidden="true">
+      <section id="ritual-stage" class="screen screen--ritual" data-screen="ritual" aria-live="polite" aria-hidden="true" inert>
         <div class="ritual-copy">
-          <p id="ritual-label" class="eyebrow">Bring light to the wick</p>
-          <p id="ritual-instruction">Drag three wandering lights to begin.</p>
+          <p id="ritual-label" class="eyebrow" data-i18n="diyaLabel">Bring light to the wick</p>
+          <p id="ritual-instruction" data-i18n="initialInstruction">Drag three wandering lights to begin.</p>
+          <div id="ritual-invitation" class="ritual-invitation" hidden>
+            <p id="ritual-quote"></p>
+            <button id="other-ritual" class="ritual-invitation__action" type="button" hidden></button>
+            <div id="aarti-invitation" hidden>
+              <p class="aarti-invitation__copy" data-i18n="aartiInvitation">And now, a moment of devotion. Would you like to listen to Lakshmi Mata’s aarti?</p>
+              <div class="aarti-invitation__actions">
+                <button id="begin-aarti" class="ritual-invitation__action" type="button" data-i18n="listenAarti">Listen to the aarti</button>
+                <button id="skip-aarti" class="quiet-action" type="button" data-i18n="stayQuiet">Stay in the quiet</button>
+              </div>
+            </div>
+          </div>
         </div>
         <div id="ritual-progress" class="ritual-progress" aria-label="Light gathered: 0 of 3">
           <span></span><span></span><span></span>
         </div>
 
         <div id="ritual-scene" class="ritual-scene" data-kind="">
-          <div class="diya" aria-label="An unlit diya">
+          <div class="diya" aria-label="A diya" data-i18n-aria="diyaSetup">
             <div class="diya__halo" aria-hidden="true"></div>
             <div class="diya__rim" aria-hidden="true"></div>
             <div class="diya__bowl" aria-hidden="true"></div>
-            <div id="diya-wick" class="diya__wick" aria-label="Diya wick target">
+            <div id="diya-wick" class="diya__wick" aria-label="Diya wick target" data-i18n-aria="wickTarget">
               <div class="diya__flame" aria-hidden="true"></div>
             </div>
           </div>
 
-          <div class="skyshot" aria-label="A skyshot cracker setup">
-            <div class="skyshot__burst" aria-hidden="true">
-              <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
-            </div>
+          <div class="skyshot" aria-label="A skyshot cracker setup" data-i18n-aria="skyshotSetup">
             <div class="skyshot__base" aria-hidden="true"></div>
             <div class="skyshot__cylinders" aria-hidden="true">
               <div class="skyshot__cylinder skyshot__cylinder--one"><b></b><b></b></div>
               <div class="skyshot__cylinder skyshot__cylinder--two"><b></b><b></b></div>
               <div class="skyshot__cylinder skyshot__cylinder--three"><b></b><b></b></div>
             </div>
-            <div id="skyshot-fuse" class="skyshot__fuse" aria-label="Skyshot fuse target"><span></span></div>
+            <canvas id="skyshot-fireworks" class="skyshot__fireworks" aria-hidden="true"></canvas>
+            <div id="skyshot-fuse" class="skyshot__fuse" aria-label="Skyshot ignition target" data-i18n-aria="fuseTarget"><span></span></div>
           </div>
 
-          <div id="orb-field" class="orb-field" aria-label="Wandering lights"></div>
+          <div id="orb-field" class="orb-field" aria-label="Wandering lights" data-i18n-aria="wanderingLights"></div>
+        </div>
+      </section>
+
+      <section id="aarti-stage" class="screen screen--aarti" data-screen="aarti" aria-label="Lakshmi Mata aarti" data-i18n-aria="aartiTitle" aria-hidden="true" inert>
+        <div class="aarti-content">
+          <header class="aarti-heading">
+            <span class="aarti-symbol" aria-hidden="true">ॐ</span>
+            <p class="eyebrow" data-i18n="aartiEyebrow">A moment of devotion</p>
+            <h1 id="aarti-title" tabindex="-1" data-i18n="aartiTitle">Lakshmi Mata Aarti</h1>
+            <p class="aarti-subtitle" data-i18n="aartiSubtitle">Let the light you kindled become a quiet offering.</p>
+          </header>
+
+          <div id="aarti-languages" class="aarti-languages" role="group" aria-label="Lyrics script" data-i18n-aria="lyricsScript">
+            <button type="button" data-lyrics-script="romanized" aria-pressed="true" data-i18n="romanized">Romanized</button>
+            <button type="button" data-lyrics-script="hindi" aria-pressed="false" lang="hi">हिन्दी</button>
+          </div>
+
+          <div class="aarti-lyrics" aria-live="off" aria-label="Lyrics" data-i18n-aria="lyrics">
+            <p id="aarti-current-line" class="aarti-lyrics__current" lang="en" data-i18n="aartiInterlude">A moment of peace, an offering of light.</p>
+            <p id="aarti-next-line" class="aarti-lyrics__next" lang="hi-Latn"></p>
+          </div>
+
+          <div class="aarti-player">
+            <audio id="aarti-audio" controls preload="none" aria-label="Play, pause, or seek Lakshmi Mata aarti" data-i18n-aria="audioControls" src="audio/lakshmi-aarti.mp3?v=adb1bc2f4083"></audio>
+            <p id="aarti-status" class="aarti-status" role="status" data-i18n="aartiReady">Your aarti will begin when you choose to listen.</p>
+            <p class="aarti-script-note" data-i18n="scriptNote">Romanized shows the Hindi lyrics in English letters.</p>
+            <div class="aarti-player__actions">
+              <button id="aarti-replay" class="quiet-action" type="button" data-i18n="startAgain">Start again</button>
+              <button id="close-aarti" class="quiet-action" type="button" data-i18n="returnQuiet">Return to the quiet</button>
+            </div>
+          </div>
         </div>
       </section>
     </main>

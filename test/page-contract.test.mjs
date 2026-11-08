@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readFile, stat } from 'node:fs/promises';
 import test from 'node:test';
+import { AARTI_RECORDING } from '../src/aarti-lyrics.js';
 
 const page = await readFile(new URL('../index.html', import.meta.url), 'utf8');
 const app = await readFile(new URL('../src/app.js', import.meta.url), 'utf8');
@@ -23,4 +24,21 @@ test('declares stable interaction hooks for the ritual controller', () => {
   assert.match(app, /setPointerCapture/);
   assert.match(app, /applyDrop/);
   assert.match(app, /pointerdown/);
+});
+
+test('aarti uses the supplied local audio with opt-in playback and accessible lyrics controls', async () => {
+  const audio = page.match(/<audio\b[^>]*>/)?.[0];
+  assert.ok(audio);
+  assert.ok(audio.includes(`src="audio/lakshmi-aarti.mp3?v=${AARTI_RECORDING.sha256.slice(0, 12)}"`));
+  assert.match(audio, /controls/);
+  assert.match(audio, /preload="none"/);
+  assert.doesNotMatch(audio, /autoplay|loop/);
+  assert.ok((await stat(new URL('../audio/lakshmi-aarti.mp3', import.meta.url))).size > 0);
+  assert.match(page, /data-screen="aarti"[^>]*inert/);
+  assert.match(page, /id="begin-aarti"/);
+  assert.match(page, /id="skip-aarti"/);
+  assert.match(page, /id="close-aarti"/);
+  assert.match(page, /data-lyrics-script="romanized"/);
+  assert.match(page, /data-lyrics-script="hindi"/);
+  assert.match(page, /class="aarti-lyrics" aria-live="off"/);
 });
