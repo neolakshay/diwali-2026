@@ -27,6 +27,9 @@ const aartiInvitation = document.querySelector('#aarti-invitation');
 const beginAartiButton = document.querySelector('#begin-aarti');
 const skipAartiButton = document.querySelector('#skip-aarti');
 const closeAartiButton = document.querySelector('#close-aarti');
+const aartiAudio = document.querySelector('#aarti-audio');
+const endingTitle = document.querySelector('#ending-title');
+const restartGreetingButton = document.querySelector('#restart-greeting');
 
 const ORB_COUNT = 10;
 const SUCCESSFUL_DROPS = 3;
@@ -38,13 +41,22 @@ const completedKinds = new Set();
 let invitationTimer;
 let stopFireworks;
 let aartiPlayer;
+let entryHintTimer;
 
 i18n.subscribe(renderRitualText);
 renderRitualText();
 
-window.setTimeout(() => entryHint.classList.add('is-visible'), 3500);
+scheduleEntryHint();
+
+function scheduleEntryHint() {
+  window.clearTimeout(entryHintTimer);
+  entryHint.classList.remove('is-visible');
+  entryHintTimer = window.setTimeout(() => entryHint.classList.add('is-visible'), 3500);
+}
 
 entryOrb.addEventListener('click', () => {
+  if (transitioning) return;
+  window.clearTimeout(entryHintTimer);
   sounds.unlock();
   sounds.setScene('choice');
   switchScreen('choice');
@@ -65,20 +77,52 @@ beginAartiButton.addEventListener('click', () => {
 });
 skipAartiButton.addEventListener('click', () => {
   if (completedKinds.size !== 2 || aartiInvitation.hidden) return;
-  aartiInvitation.hidden = true;
-  sounds.setScene('quiet');
-  focusClosingWish();
+  endGreeting();
 });
-closeAartiButton.addEventListener('click', () => {
-  if (transitioning) return;
+closeAartiButton.addEventListener('click', endGreeting);
+aartiAudio.addEventListener('ended', () => {
+  if (screens.get('aarti').classList.contains('is-visible')) endGreeting();
+});
+restartGreetingButton.addEventListener('click', restartGreeting);
+
+function endGreeting() {
+  if (transitioning || completedKinds.size !== 2) return;
   aartiPlayer?.pause();
   sounds.setScene('quiet');
-  switchScreen('ritual', focusClosingWish);
-});
+  aartiInvitation.hidden = true;
+  switchScreen('ending', () => endingTitle.focus({ preventScroll: true }));
+}
 
-function focusClosingWish() {
-  ritualQuote.setAttribute('tabindex', '-1');
-  ritualQuote.focus({ preventScroll: true });
+function restartGreeting() {
+  if (transitioning || !screens.get('ending').classList.contains('is-visible')) return;
+  window.clearTimeout(invitationTimer);
+  window.clearTimeout(entryHintTimer);
+  invitationTimer = undefined;
+  entryHint.classList.remove('is-visible');
+  stopFireworks?.();
+  stopFireworks = null;
+  if (aartiPlayer) aartiPlayer.reset();
+  else {
+    aartiAudio.pause();
+    aartiAudio.currentTime = 0;
+  }
+  sounds.setScene('entry');
+  completedKinds.clear();
+  ritual = null;
+  activeDrag = null;
+  ritualScene.dataset.kind = '';
+  ritualScene.classList.remove('is-complete', 'is-near-target');
+  orbField.replaceChildren();
+  ritualInvitation.hidden = true;
+  otherRitualButton.hidden = true;
+  aartiInvitation.hidden = true;
+  ritualQuote.textContent = '';
+  screens.forEach((screen) => { screen.scrollTop = 0; });
+  renderRitualText();
+  switchScreen('entry', () => {
+    scheduleEntryHint();
+    entryOrb.focus({ preventScroll: true });
+  });
 }
 
 function switchScreen(nextName, onShown = () => {}) {
@@ -255,10 +299,11 @@ function absorbOrb(orb) {
 }
 
 function updateProgress() {
-  ritualScene.dataset.progress = String(ritual.successfulDrops);
-  ritualProgress.setAttribute('aria-label', i18n.t('progress', { count: ritual.successfulDrops, total: SUCCESSFUL_DROPS }));
+  const count = ritual?.successfulDrops ?? 0;
+  ritualScene.dataset.progress = String(count);
+  ritualProgress.setAttribute('aria-label', i18n.t('progress', { count, total: SUCCESSFUL_DROPS }));
   [...ritualProgress.children].forEach((dot, index) => {
-    dot.classList.toggle('is-filled', index < ritual.successfulDrops);
+    dot.classList.toggle('is-filled', index < count);
   });
 }
 
@@ -295,7 +340,10 @@ function revealInvitation() {
 
 function renderRitualText() {
   if (!ritual) {
-    ritualProgress.setAttribute('aria-label', i18n.t('progress', { count: 0, total: SUCCESSFUL_DROPS }));
+    ritualStage.setAttribute('aria-label', i18n.t('chooseRitual'));
+    ritualLabel.textContent = i18n.t('diyaLabel');
+    ritualInstruction.textContent = i18n.t('initialInstruction');
+    updateProgress();
     return;
   }
   const { kind, status } = ritual;

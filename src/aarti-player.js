@@ -90,5 +90,17 @@ export function createAartiPlayer(root = document, i18n) {
   renderScriptButtons();
   setStatus(statusKey);
   syncLyrics();
-  return { play, pause: () => audio.pause() };
+  return {
+    play,
+    pause: () => audio.pause(),
+    reset() {
+      audio.pause();
+      audio.currentTime = 0;
+      script = uiLanguage() === 'hi' ? 'hindi' : 'romanized';
+      renderedFrame = '';
+      renderScriptButtons();
+      setStatus('aartiReady');
+      syncLyrics();
+    },
+  };
 }

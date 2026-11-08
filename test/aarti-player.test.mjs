@@ -19,6 +19,11 @@ function fixture(i18n) {
     'aarti-audio', 'aarti-current-line', 'aarti-next-line', 'aarti-status', 'aarti-replay',
   ].map((name) => [name, new Element()]));
   const audio = elements['aarti-audio'];
+  let audioTime = 0;
+  Object.defineProperty(audio, 'currentTime', {
+    get: () => audioTime,
+    set(value) { audioTime = value; if (value === 0) audio.ended = false; },
+  });
   audio.currentTime = 0;
   audio.ended = false;
   audio.playCount = 0;
@@ -189,4 +194,24 @@ test('Hindi site language selects Hindi lyrics initially, including interludes a
   i18n.setLanguage('en');
   assert.equal(elements['aarti-current-line'].textContent, MESSAGES.en.aartiFarewell);
   assert.equal(audio.playCount, 0);
+});
+
+test('greeting restart resets the recording and lyrics without replaying audio or changing site language', async () => {
+  const i18n = createI18n({ documentElement: {}, querySelectorAll: () => [] });
+  i18n.setLanguage('hi');
+  const { player, audio, elements, buttons } = fixture(i18n);
+  await player.play();
+  audio.currentTime = AARTI_RECORDING.duration;
+  audio.ended = true;
+  audio.fire('ended');
+  buttons[0].fire('click');
+  player.reset();
+  assert.ok(audio.paused);
+  assert.equal(audio.currentTime, 0);
+  assert.equal(audio.playCount, 1);
+  assert.equal(i18n.language, 'hi');
+  assert.equal(elements['aarti-current-line'].textContent, MESSAGES.hi.aartiInterlude);
+  assert.equal(elements['aarti-next-line'].textContent, AARTI_CUES[0].hindi);
+  assert.equal(elements['aarti-status'].textContent, MESSAGES.hi.aartiReady);
+  assert.equal(buttons[1].attributes['aria-pressed'], 'true');
 });

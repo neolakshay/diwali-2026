@@ -42,3 +42,16 @@ test('aarti uses the supplied local audio with opt-in playback and accessible ly
   assert.match(page, /data-lyrics-script="hindi"/);
   assert.match(page, /class="aarti-lyrics" aria-live="off"/);
 });
+
+test('ending includes the personal credit, safe social links, and a restart action', () => {
+  assert.match(page, /data-screen="ending"[^>]*inert/);
+  assert.match(page, /id="ending-title"/);
+  assert.match(page, /Lakshay Malik/);
+  for (const url of ['https://github.com/neolakshay', 'https://www.instagram.com/neolakshay']) {
+    const link = [...page.matchAll(/<a\b[^>]*>/g)].map(([tag]) => tag).find((tag) => tag.includes(`href="${url}"`));
+    assert.ok(link);
+    assert.match(link, /target="_blank"/);
+    assert.match(link, /rel="noopener noreferrer"/);
+  }
+  assert.match(page, /id="restart-greeting"/);
+});

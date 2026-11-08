@@ -199,6 +199,22 @@ h1 { margin: 0; font-size: clamp(2.35rem, 7vw, 5.6rem); font-weight: 400; line-h
 .aarti-script-note { color: rgba(255,239,202,.45); font-size: .8rem; line-height: 1.5; }
 .aarti-player__actions { display: flex; justify-content: center; flex-wrap: wrap; gap: .5rem 1rem; margin-top: .75rem; }
 
+.screen--ending { display: flex; flex-direction: column; gap: 2rem; overflow-y: auto; padding: clamp(6.5rem, 14vh, 9rem) 1.25rem max(2rem, env(safe-area-inset-bottom)); background: radial-gradient(ellipse at 50% 38%, rgba(255,154,35,.07), transparent 62%); }
+.ending-content { flex-shrink: 0; width: min(100%, 42rem); margin: auto; text-align: center; }
+.ending-spark { display: block; margin-bottom: 1.5rem; color: var(--warm); font-size: 2rem; text-shadow: 0 0 2rem rgba(255,170,44,.5); }
+.ending-content h1 { font-size: clamp(2.2rem, 6vw, 4.2rem); line-height: 1.2; }
+.ending-content h1:focus { outline: none; }
+.ending-wish { max-width: 32rem; margin: 1.6rem auto 2rem; color: rgba(255,249,223,.7); font-size: clamp(1rem, 2.2vw, 1.15rem); line-height: 1.85; }
+.ending-credit { margin: 0; color: rgba(255,239,202,.6); line-height: 1.8; }
+.ending-credit strong { color: var(--paper); font-weight: 400; white-space: nowrap; }
+.ending-links { display: flex; justify-content: center; flex-wrap: wrap; gap: .5rem 1.3rem; margin-top: .9rem; }
+.ending-links a { display: inline-flex; align-items: center; gap: .4rem; min-height: 44px; padding: .4rem; color: var(--warm); text-decoration: underline; text-decoration-color: rgba(255,206,110,.3); text-underline-offset: .3rem; }
+.ending-links a:hover { text-decoration-color: var(--warm); }
+.ending-links a:focus-visible { outline: 2px solid var(--warm); outline-offset: 3px; border-radius: .25rem; }
+.ending-footer { flex-shrink: 0; width: min(100%, 42rem); margin: 0 auto; text-align: center; }
+.ending-restart { margin-top: 0; }
+.ending-footer p { margin: .9rem 0 0; color: rgba(255,239,202,.45); font-size: .85rem; line-height: 1.6; }
+
 .ritual-progress { position: absolute; z-index: 9; top: clamp(5.5rem, 11vh, 8.2rem); left: 50%; display: flex; gap: .5rem; transform: translateX(-50%); }
 .ritual-progress span { width: .47rem; height: .47rem; border: 1px solid rgba(255,211,117,.5); border-radius: 50%; transition: background .35s ease, box-shadow .35s ease, transform .35s ease; }
 .ritual-progress span.is-filled { background: var(--warm); box-shadow: 0 0 12px 2px rgba(255,174,33,.72); transform: scale(1.14); }

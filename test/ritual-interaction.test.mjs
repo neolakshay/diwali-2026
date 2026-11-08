@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { MESSAGES } from '../src/i18n.js';
-import { AARTI_CUES } from '../src/aarti-lyrics.js';
+import { AARTI_CUES, AARTI_RECORDING } from '../src/aarti-lyrics.js';
 
 class Element {
   constructor(bounds = { left: 0, top: 0, width: 400, height: 600 }) {
@@ -20,9 +20,12 @@ class Element {
     this.clientWidth = 400;
     this.clientHeight = 600;
   }
-  addEventListener(name, fn) { this.listeners.set(name, fn); }
+  addEventListener(name, fn) { this.listeners.set(name, [...(this.listeners.get(name) ?? []), fn]); }
+  removeEventListener(name, fn) { this.listeners.set(name, (this.listeners.get(name) ?? []).filter((listener) => listener !== fn)); }
   dispatch(name, props = {}) {
-    this.listeners.get(name)?.({ currentTarget: this, pointerId: 1, button: 0, preventDefault() {}, ...props });
+    for (const listener of this.listeners.get(name) ?? []) {
+      listener({ currentTarget: this, pointerId: 1, button: 0, preventDefault() {}, ...props });
+    }
   }
   setAttribute(name, value) { this[name] = value; }
   focus() { this.focused = true; }
@@ -47,21 +50,27 @@ for (const kind of ['skyshot', 'diya']) {
       'aarti-invitation', 'begin-aarti', 'skip-aarti', 'close-aarti', 'aarti-title',
       'aarti-audio', 'aarti-current-line', 'aarti-next-line', 'aarti-status', 'aarti-replay',
       'sound-toggle',
+      'ending-title', 'restart-greeting',
     ].map((id) => [id, new Element()]));
     ids['ritual-progress'].children = [new Element(), new Element(), new Element()];
     ids['ritual-invitation'].hidden = true;
     ids['other-ritual'].hidden = true;
     ids['aarti-invitation'].hidden = true;
     const audio = ids['aarti-audio'];
+    let audioTime = 0;
+    Object.defineProperty(audio, 'currentTime', {
+      get: () => audioTime,
+      set(value) { audioTime = value; if (value === 0) audio.ended = false; },
+    });
     audio.currentTime = 0;
     audio.playCount = 0;
-    audio.play = async () => { audio.playCount += 1; audio.paused = false; audio.dispatch('playing'); };
+    audio.play = async () => { audio.playCount += 1; audio.paused = false; audio.ended = false; audio.dispatch('playing'); };
     audio.pause = () => { audio.paused = true; audio.dispatch('pause'); };
     // Scaled and offset, as during the screen's entrance animation.
     ids['orb-field'].bounds = { left: 10, top: 20, width: 440, height: 660 };
     const target = ids[kind === 'diya' ? 'diya-wick' : 'skyshot-fuse'];
     target.bounds = { left: 198, top: 480, width: 64, height: 64 };
-    const screens = ['entry', 'choice', 'ritual', 'aarti'].map((screen) => {
+    const screens = ['entry', 'choice', 'ritual', 'aarti', 'ending'].map((screen) => {
       const element = new Element();
       element.dataset.screen = screen;
       element.inert = screen !== 'entry';
@@ -80,6 +89,7 @@ for (const kind of ['skyshot', 'diya']) {
     ids['ritual-instruction'].dataset.i18n = 'initialInstruction';
     ids['aarti-current-line'].dataset.i18n = 'aartiInterlude';
     ids['aarti-status'].dataset.i18n = 'aartiReady';
+    ids['ending-title'].dataset.i18n = 'endingTitle';
     const oldDocument = globalThis.document;
     const oldWindow = globalThis.window;
     globalThis.document = {
@@ -100,7 +110,7 @@ for (const kind of ['skyshot', 'diya']) {
     globalThis.window = {
       setTimeout: (fn, delay) => {
         const id = ++timerId;
-        if (delay === 1200) timers.set(id, fn);
+        if (delay === 1200 || delay === 3500) timers.set(id, { fn, delay });
         else fn();
         return id;
       },
@@ -108,9 +118,11 @@ for (const kind of ['skyshot', 'diya']) {
       matchMedia: () => ({ matches: false }),
     };
     const settleDiya = () => {
-      for (const [id, fn] of timers) {
-        timers.delete(id);
-        fn();
+      for (const [id, timer] of timers) {
+        if (timer.delay === 1200) {
+          timers.delete(id);
+          timer.fn();
+        }
       }
     };
     try {
@@ -122,6 +134,8 @@ for (const kind of ['skyshot', 'diya']) {
       assert.ok(ids['ritual-invitation'].hidden);
       ids['begin-aarti'].dispatch('click');
       assert.equal(audio.playCount, 0, 'aarti is gated until both rituals settle');
+      ids['restart-greeting'].dispatch('click');
+      assert.equal(ids['orb-field'].children, orbs, 'restart is unavailable before the ending');
       ids['other-ritual'].dispatch('click');
       assert.equal(ids['orb-field'].children, orbs);
       for (const light of orbs) {
@@ -239,16 +253,69 @@ for (const kind of ['skyshot', 'diya']) {
         assert.equal(ids['aarti-status'].textContent, MESSAGES.hi.aartiPlaying, 'static translations do not overwrite player state');
         assert.match(ids['aarti-current-line'].textContent, /लक्ष्मी/);
         setLanguage('en');
-        ids['close-aarti'].dispatch('click');
-        assert.ok(audio.paused, 'returning to the quiet stops playback');
-        assert.ok(screens.find((screen) => screen.dataset.screen === 'ritual').classList.contains('is-visible'));
+        audio.currentTime = AARTI_RECORDING.duration;
+        audio.ended = true;
+        audio.dispatch('ended');
+        assert.ok(audio.paused, 'finishing the aarti stops playback');
+      } else {
+        ids['skip-aarti'].dispatch('click');
       }
+      assert.ok(screens.find((screen) => screen.dataset.screen === 'ending').classList.contains('is-visible'));
+      assert.ok(ids['ending-title'].focused);
       const playCount = audio.playCount;
-      ids['skip-aarti'].dispatch('click');
       assert.ok(ids['aarti-invitation'].hidden);
-      assert.ok(ids['ritual-quote'].focused);
       ids['begin-aarti'].dispatch('click');
-      assert.equal(audio.playCount, playCount, 'declining the invitation never starts audio');
+      assert.equal(audio.playCount, playCount, 'the hidden invitation never starts audio');
+      setLanguage('hi');
+      assert.equal(ids['ending-title'].textContent, MESSAGES.hi.endingTitle);
+      screens.forEach((screen) => { screen.scrollTop = 120; });
+      ids['restart-greeting'].dispatch('click');
+      assert.ok(screens[0].classList.contains('is-visible'));
+      assert.equal(screens[0].inert, false);
+      assert.ok(ids['entry-orb'].focused);
+      assert.ok(screens.every((screen) => screen.scrollTop === 0));
+      assert.equal(ids['ritual-scene'].dataset.kind, '');
+      assert.equal(ids['ritual-scene'].dataset.progress, '0');
+      assert.equal(ids['ritual-scene'].classList.contains('is-complete'), false);
+      assert.equal(ids['orb-field'].children.length, 0);
+      assert.ok(ids['ritual-progress'].children.every((dot) => !dot.classList.contains('is-filled')));
+      assert.ok(ids['ritual-invitation'].hidden);
+      assert.ok(ids['aarti-invitation'].hidden);
+      assert.equal(audio.currentTime, 0);
+      assert.ok(audio.paused);
+      assert.equal(audio.playCount, playCount);
+      assert.equal(globalThis.document.documentElement.lang, 'hi', 'restart preserves language preference');
+      assert.equal(ids['entry-hint'].classList.contains('is-visible'), false);
+      const hintTimers = [...timers.values()].filter((timer) => timer.delay === 3500);
+      assert.equal(hintTimers.length, 1, 'restart schedules exactly one fresh 3.5-second hint');
+      hintTimers[0].fn();
+      assert.ok(ids['entry-hint'].classList.contains('is-visible'));
+
+      // The complete two-path greeting must be available again, not just its entry screen.
+      ids['entry-orb'].dispatch('click');
+      choice.dispatch('click');
+      assert.equal(ids['ritual-scene'].dataset.kind, kind);
+      const finishCurrentRitual = () => {
+        const currentKind = ids['ritual-scene'].dataset.kind;
+        const bounds = ids[currentKind === 'diya' ? 'diya-wick' : 'skyshot-fuse'].bounds;
+        for (const light of ids['orb-field'].children.slice(0, 3)) {
+          light.dispatch('pointerdown', { clientX: 100, clientY: 200 });
+          light.dispatch('pointerup', { clientX: bounds.left + bounds.width / 2, clientY: bounds.top + bounds.height / 2 });
+        }
+        settleDiya();
+      };
+      finishCurrentRitual();
+      assert.ok(ids['aarti-invitation'].hidden, 'completed rituals were cleared on restart');
+      assert.equal(ids['other-ritual'].hidden, false);
+      ids['other-ritual'].dispatch('click');
+      finishCurrentRitual();
+      assert.equal(ids['aarti-invitation'].hidden, false);
+      ids['begin-aarti'].dispatch('click');
+      assert.equal(audio.playCount, playCount + 1);
+      assert.equal(audio.currentTime, 0, 'repeated greeting starts the aarti from the beginning');
+      ids['close-aarti'].dispatch('click');
+      assert.ok(audio.paused);
+      assert.ok(screens.find((screen) => screen.dataset.screen === 'ending').classList.contains('is-visible'));
     } finally {
       globalThis.document = oldDocument;
       globalThis.window = oldWindow;
