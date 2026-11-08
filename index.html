@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#050505" />
+    <title>A Diwali ritual</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="grain" aria-hidden="true"></div>
+    <nav class="language" aria-label="Language">
+      <button class="language__active" type="button" aria-pressed="true">EN</button>
+      <button type="button" disabled aria-label="Hindi language support is coming soon">हि</button>
+    </nav>
+
+    <main id="experience">
+      <section class="screen screen--entry is-visible" data-screen="entry" aria-label="A beginning">
+        <div class="entry-light" aria-hidden="true"></div>
+        <div class="entry-action">
+          <button id="entry-orb" class="entry-orb" type="button" aria-label="Begin your Diwali greeting"></button>
+          <p id="entry-hint" class="entry-hint">Click here</p>
+        </div>
+      </section>
+
+      <section class="screen screen--choice" data-screen="choice" aria-label="Choose your Diwali ritual" aria-hidden="true">
+        <div class="choice-copy">
+          <p class="eyebrow">This Diwali, what will you choose?</p>
+          <h1>Let joy take a form.</h1>
+          <p>Some celebrations glow quietly. Others arrive in a burst.</p>
+          <div class="choice-grid">
+            <button class="choice-card" type="button" data-choice="diya">
+              <span class="choice-card__symbol" aria-hidden="true">✦</span>
+              <span>Light a diya</span>
+            </button>
+            <button class="choice-card" type="button" data-choice="skyshot">
+              <span class="choice-card__symbol" aria-hidden="true">✺</span>
+              <span>Burst crackers</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section id="ritual-stage" class="screen screen--ritual" data-screen="ritual" aria-live="polite" aria-hidden="true">
+        <div class="ritual-copy">
+          <p id="ritual-label" class="eyebrow">Bring light to the wick</p>
+          <p id="ritual-instruction">Drag three wandering lights to begin.</p>
+        </div>
+        <div id="ritual-progress" class="ritual-progress" aria-label="Light gathered: 0 of 3">
+          <span></span><span></span><span></span>
+        </div>
+
+        <div id="ritual-scene" class="ritual-scene" data-kind="">
+          <div class="diya" aria-label="An unlit diya">
+            <div class="diya__halo" aria-hidden="true"></div>
+            <div class="diya__rim" aria-hidden="true"></div>
+            <div class="diya__bowl" aria-hidden="true"></div>
+            <div id="diya-wick" class="diya__wick" aria-label="Diya wick target">
+              <div class="diya__flame" aria-hidden="true"></div>
+            </div>
+          </div>
+
+          <div class="skyshot" aria-label="A skyshot cracker setup">
+            <div class="skyshot__burst" aria-hidden="true">
+              <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+            </div>
+            <div class="skyshot__base" aria-hidden="true"></div>
+            <div class="skyshot__cylinders" aria-hidden="true">
+              <div class="skyshot__cylinder skyshot__cylinder--one"><b></b><b></b></div>
+              <div class="skyshot__cylinder skyshot__cylinder--two"><b></b><b></b></div>
+              <div class="skyshot__cylinder skyshot__cylinder--three"><b></b><b></b></div>
+            </div>
+            <div id="skyshot-fuse" class="skyshot__fuse" aria-label="Skyshot fuse target"><span></span></div>
+          </div>
+
+          <div id="orb-field" class="orb-field" aria-label="Wandering lights"></div>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="src/app.js"></script>
+  </body>
+</html>
